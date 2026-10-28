@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sia_iti_app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    ports:
+      - "8000:8000"
+    networks:
+      - sia-network
+
+  db:
+    image: postgres:17
+    container_name: sia_iti_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sia-iti
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - sia-network
+
+volumes:
+  pgdata:
+
+networks:
+  sia-network:
+    driver: bridge
