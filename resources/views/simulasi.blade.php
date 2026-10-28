@@ -9,7 +9,8 @@
 <body>
     <h1>Ini Halaman Simulasi</h1>
 
-    <p>Saya rafa</p>
+    <p>Saya rafa dan jasuke</p>
+    <p>Saya orang kaya amiin</p>
     <h2>saya tegarr baguss</h2>
 </body>
 </html>
