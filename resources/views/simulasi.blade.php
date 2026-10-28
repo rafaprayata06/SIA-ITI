@@ -10,5 +10,6 @@
     <h1>Ini Halaman Simulasi</h1>
 
     <p>Saya Jasuke</p>
+    <p>Saya orang kaya amiin</p>
 </body>
 </html>
