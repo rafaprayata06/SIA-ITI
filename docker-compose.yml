@@ -35,15 +35,15 @@ services:
     container_name: sia_iti_db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: sia-iti
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: secret_password
+      POSTGRES_DB: "${DB_DATABASE:-sia-iti}"
+      POSTGRES_USER: "${DB_USERNAME:-postgres}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD:?DB_PASSWORD harus diatur di file .env}"
     ports:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d sia-iti"]
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 10s
       timeout: 5s
       retries: 5
