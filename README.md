@@ -26,30 +26,41 @@ Untuk menjalankan project menggunakan Docker, pastikan sudah tersedia:
 
 Pastikan Docker Desktop sudah berjalan sebelum menjalankan perintah Docker.
 
-## Menjalankan Project dengan Docker
+## Menjalankan Project dengan Docker (Direkomendasikan)
 
-### 1. Clone repository
+> Panduan teknis ringkas Docker juga tersedia di **[docs/docker-setup.md](docs/docker-setup.md)**.
+
+### 1. Clone repository & buat branch fitur baru dari `staging`
+
+Jangan ngoding langsung di branch `main` maupun `staging`. Pindah ke `staging` terlebih dahulu untuk mengambil kode dasar terbaru, lalu buat branch fitur kamu sendiri (contoh: `feature/krs`):
 
 ```bash
-git clone https://github.com/rafaprayata06/SIA-ITI.git
+git clone [https://github.com/rafaprayata06/SIA-ITI.git](https://github.com/rafaprayata06/SIA-ITI.git)
 cd SIA-ITI
+git checkout staging
+git pull origin staging
+git checkout -b feature/krs
 ```
-
-Pastikan repository yang digunakan sudah memiliki konfigurasi Docker.
 
 ### 2. Membuat file environment
 
 Salin file `.env.example` menjadi `.env`.
 
-PowerShell:
+PowerShell (Windows):
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
+Git Bash / Linux / macOS:
+
+```bash
+cp .env.example .env
+```
+
 ### 3. Mengatur konfigurasi environment
 
-Sesuaikan konfigurasi berikut pada file `.env`:
+Pastikan konfigurasi berikut sesuai pada file `.env` (mengikuti template `.env.example`):
 
 ```env
 APP_NAME=Laravel
@@ -62,7 +73,7 @@ DB_HOST=db
 DB_PORT=5432
 DB_DATABASE=sia-iti
 DB_USERNAME=postgres
-DB_PASSWORD=secret_password
+DB_PASSWORD=change_me_locally
 ```
 
 **Catatan:** Konfigurasi database tersebut mengikuti Docker Compose untuk development lokal saat ini. Jangan menggunakan password contoh tersebut untuk lingkungan production.
@@ -109,6 +120,19 @@ Buka browser dan kunjungi:
 
 http://localhost:8000
 
+---
+
+## Alternatif: Setup Lokal Manual (Tanpa Docker)
+
+Bagi programmer yang sudah terlanjur menginstal **PHP 8.5**, **Composer**, dan **PostgreSQL** secara manual di laptop masing-masing, tetap dapat menjalankan aplikasi tanpa terpengaruh file Docker:
+
+1. Pastikan sudah berada di branch fitur masing-masing yang dibuat dari `staging` (contoh: `git checkout -b feature/krs`).
+2. Jalankan `composer install` dan `npm install`.
+3. Salin `.env.example` menjadi `.env`, lalu sesuaikan koneksi database lokal (`DB_HOST=127.0.0.1`, `DB_PORT=5432`, `DB_DATABASE=sia-iti`, serta `DB_USERNAME` dan `DB_PASSWORD` PostgreSQL lokal).
+4. Jalankan `php artisan key:generate`, `php artisan migrate`, lalu `php artisan serve`.
+
+---
+
 ## Perintah Docker yang Sering Digunakan
 
 | Perintah | Fungsi |
@@ -150,6 +174,8 @@ SIA-ITI/
 ├── docker/
 │   └── nginx/
 │       └── default.conf
+├── docs/
+│   └── docker-setup.md
 ├── app/
 ├── bootstrap/
 ├── config/
@@ -159,6 +185,18 @@ SIA-ITI/
 ├── routes/
 └── ...
 ```
+
+## Alur Branching & Pull Request (Git)
+
+- **`main`**: Branch utama berisi kode stabil yang siap demo/production.
+- **`staging`**: Branch integrasi tempat seluruh fitur tim digabung dan diuji otomatis oleh CI.
+- **`feature/<nama-fitur>`**: Branch kerja masing-masing tim programmer yang dibuat di bawah `staging` (contoh: `feature/krs`, `feature/khs`, `feature/auth`).
+
+**Langkah menyetor fitur setelah selesai ngoding:**
+1. Pastikan branch fitur sudah dites dan berjalan normal tanpa error.
+2. Tarik pembaruan terbaru dari `staging` (`git pull origin staging`) untuk memastikan tidak ada konflik file.
+3. Push branch fitur kamu ke GitHub (`git push origin feature/<nama-fitur>`).
+4. Buka **Pull Request (PR)** di GitHub dengan arah **`base: staging` <- `compare: feature/<nama-fitur>`** dan tunggu pengecekan otomatis CI selesai sebelum di-merge.
 
 ## Catatan Pengembangan
 
