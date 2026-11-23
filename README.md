@@ -1,58 +1,205 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SIAKAD ITI
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistem Informasi Akademik Institut Teknologi Indonesia (ITI).
 
-## About Laravel
+Project ini dikembangkan menggunakan Laravel sebagai framework backend dan PostgreSQL sebagai database.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Teknologi
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| Teknologi           | Versi / Keterangan | |---|---|
+| Laravel             | 13.39.0 |
+| PHP | 8.5           |
+| Database            | PostgreSQL 17 |
+| Web Server          | Nginx |
+| PHP Process Manager | PHP-FPM |
+| Dependency Manager  | Composer |
+| Containerization    | Docker & Docker Compose |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Persyaratan
 
-## Learning Laravel
+Untuk menjalankan project menggunakan Docker, pastikan sudah tersedia:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- Git
+- Docker Desktop
+- Docker Compose
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Pastikan Docker Desktop sudah berjalan sebelum menjalankan perintah Docker.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## Menjalankan Project dengan Docker (Direkomendasikan)
 
-## Agentic Development
+> Panduan teknis ringkas Docker juga tersedia di **[docs/docker-setup.md](docs/docker-setup.md)**.
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### 1. Clone repository & buat branch fitur baru dari `staging`
+
+Jangan ngoding langsung di branch `main` maupun `staging`. Pindah ke `staging` terlebih dahulu untuk mengambil kode dasar terbaru, lalu buat branch fitur kamu sendiri (contoh: `feature/krs`):
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/rafaprayata06/SIA-ITI.git
+cd SIA-ITI
+git checkout staging
+git pull origin staging
+git checkout -b feature/krs
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### 2. Membuat file environment
 
-## Contributing
+Salin file `.env.example` menjadi `.env`.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+PowerShell (Windows):
 
-## Code of Conduct
+```powershell
+Copy-Item .env.example .env
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Git Bash / Linux / macOS:
 
-## Security Vulnerabilities
+```bash
+cp .env.example .env
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### 3. Mengatur konfigurasi environment
 
-## License
+Pastikan konfigurasi berikut sesuai pada file `.env` (mengikuti template `.env.example`):
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```env
+APP_NAME=Laravel
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://localhost:8000
+
+DB_CONNECTION=pgsql
+DB_HOST=db
+DB_PORT=5432
+DB_DATABASE=sia-iti
+DB_USERNAME=postgres
+DB_PASSWORD=change_me_locally
+```
+
+**Catatan:** Konfigurasi database tersebut mengikuti Docker Compose untuk development lokal saat ini. Jangan menggunakan password contoh tersebut untuk lingkungan production.
+
+### 4. Menjalankan container
+
+Jalankan perintah:
+
+```bash
+docker compose up -d --build
+```
+
+Perintah tersebut akan membangun image dan menjalankan service:
+
+- `app`: Laravel dengan PHP-FPM.
+- `nginx`: Web server untuk menerima HTTP request.
+- `db`: Database PostgreSQL 17.
+
+### 5. Menginstal dependency PHP
+
+```bash
+docker compose exec app composer install
+```
+
+Perintah ini menginstal dependency Laravel ke dalam container.
+
+### 6. Membuat application key
+
+```bash
+docker compose exec app php artisan key:generate
+```
+
+### 7. Menjalankan database migration
+
+```bash
+docker compose exec app php artisan migrate
+```
+
+Perintah ini menjalankan migration untuk membuat struktur tabel database.
+
+### 8. Mengakses aplikasi
+
+Buka browser dan kunjungi:
+
+http://localhost:8000
+
+---
+
+## Alternatif: Setup Lokal Manual (Tanpa Docker)
+
+Bagi programmer yang sudah terlanjur menginstal **PHP 8.5**, **Composer**, dan **PostgreSQL** secara manual di laptop masing-masing, tetap dapat menjalankan aplikasi tanpa terpengaruh file Docker:
+
+1. Pastikan sudah berada di branch fitur masing-masing yang dibuat dari `staging` (contoh: `git checkout -b feature/krs`).
+2. Jalankan `composer install` dan `npm install`.
+3. Salin `.env.example` menjadi `.env`, lalu sesuaikan koneksi database lokal (`DB_HOST=127.0.0.1`, `DB_PORT=5432`, `DB_DATABASE=sia-iti`, serta `DB_USERNAME` dan `DB_PASSWORD` PostgreSQL lokal).
+4. Jalankan `php artisan key:generate`, `php artisan migrate`, lalu `php artisan serve`.
+
+---
+
+## Perintah Docker yang Sering Digunakan
+
+| Perintah                        | Fungsi | |---|---|
+| `docker compose up -d`          | Menjalankan container |
+| `docker compose up -d --build`  | Build ulang image dan menjalankan container |
+| `docker compose down`           | Menghentikan dan menghapus container |
+| `docker compose ps`             | Melihat status container |
+| `docker compose logs -f`        | Melihat log seluruh service |
+| `docker compose logs -f app`    | Melihat log service aplikasi |
+| `docker compose exec app bash`  | Masuk ke terminal container aplikasi |
+
+**Penting:** Jangan menggunakan `docker compose down -v` sembarangan karena opsi `-v` juga menghapus named volume, termasuk penyimpanan database PostgreSQL.
+
+## Perintah Laravel
+
+Jalankan perintah Artisan melalui container aplikasi:
+
+```bash
+docker compose exec app php artisan migrate
+docker compose exec app php artisan route:list
+docker compose exec app php artisan cache:clear
+docker compose exec app php artisan config:clear
+```
+
+Untuk menjalankan pengujian:
+
+```bash
+docker compose exec app php artisan test
+```
+
+## Struktur Infrastruktur Docker
+
+```text
+SIA-ITI/
+├── Dockerfile
+├── docker-compose.yml
+├── .dockerignore
+├── docker/
+│   └── nginx/
+│       └── default.conf
+├── docs/
+│   └── docker-setup.md
+├── app/
+├── bootstrap/
+├── config/
+├── database/
+├── public/
+├── resources/
+├── routes/
+└── ...
+```
+
+## Alur Branching & Pull Request (Git)
+
+- **`main`**: Branch utama berisi kode stabil yang siap demo/production.
+- **`staging`**: Branch integrasi tempat seluruh fitur tim digabung dan diuji otomatis oleh CI.
+- **`feature/<nama-fitur>`**: Branch kerja masing-masing tim programmer yang dibuat di bawah `staging` (contoh: `feature/krs`, `feature/khs`, `feature/auth`).
+
+**Langkah menyetor fitur setelah selesai ngoding:**
+1. Pastikan branch fitur sudah dites dan berjalan normal tanpa error.
+2. Tarik pembaruan terbaru dari `staging` (`git pull origin staging`) untuk memastikan tidak ada konflik file.
+3. Push branch fitur kamu ke GitHub (`git push origin feature/<nama-fitur>`).
+4. Buka **Pull Request (PR)** di GitHub dengan arah **`base: staging` <- `compare: feature/<nama-fitur>`** dan tunggu pengecekan otomatis CI selesai sebelum di-merge.
+
+## Catatan Pengembangan
+
+- Docker digunakan untuk menyediakan lingkungan development lokal yang lebih konsisten.
+- PostgreSQL berjalan di dalam container Docker.
+- Port aplikasi pada host adalah `8000`.
+- Port PostgreSQL pada host adalah `5433`, sedangkan komunikasi antar-container menggunakan port `5432`.
+- Konfigurasi deployment ke server kampus maupun cloud akan ditentukan dan didokumentasikan secara terpisah setelah keputusan infrastruktur dibuat.
