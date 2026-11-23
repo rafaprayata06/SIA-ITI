@@ -6,15 +6,14 @@ Project ini dikembangkan menggunakan Laravel sebagai framework backend dan Postg
 
 ## Teknologi
 
-| Teknologi | Versi / Keterangan |
-|---|---|
-| Laravel | 13.39.0 |
-| PHP | 8.5 |
-| Database | PostgreSQL 17 |
-| Web Server | Nginx |
+| Teknologi           | Versi / Keterangan | |---|---|
+| Laravel             | 13.39.0 |
+| PHP | 8.5           |
+| Database            | PostgreSQL 17 |
+| Web Server          | Nginx |
 | PHP Process Manager | PHP-FPM |
-| Dependency Manager | Composer |
-| Containerization | Docker & Docker Compose |
+| Dependency Manager  | Composer |
+| Containerization    | Docker & Docker Compose |
 
 ## Persyaratan
 
@@ -35,7 +34,7 @@ Pastikan Docker Desktop sudah berjalan sebelum menjalankan perintah Docker.
 Jangan ngoding langsung di branch `main` maupun `staging`. Pindah ke `staging` terlebih dahulu untuk mengambil kode dasar terbaru, lalu buat branch fitur kamu sendiri (contoh: `feature/krs`):
 
 ```bash
-git clone [https://github.com/rafaprayata06/SIA-ITI.git](https://github.com/rafaprayata06/SIA-ITI.git)
+git clone https://github.com/rafaprayata06/SIA-ITI.git
 cd SIA-ITI
 git checkout staging
 git pull origin staging
@@ -135,15 +134,14 @@ Bagi programmer yang sudah terlanjur menginstal **PHP 8.5**, **Composer**, dan *
 
 ## Perintah Docker yang Sering Digunakan
 
-| Perintah | Fungsi |
-|---|---|
-| `docker compose up -d` | Menjalankan container |
-| `docker compose up -d --build` | Build ulang image dan menjalankan container |
-| `docker compose down` | Menghentikan dan menghapus container |
-| `docker compose ps` | Melihat status container |
-| `docker compose logs -f` | Melihat log seluruh service |
-| `docker compose logs -f app` | Melihat log service aplikasi |
-| `docker compose exec app bash` | Masuk ke terminal container aplikasi |
+| Perintah                        | Fungsi | |---|---|
+| `docker compose up -d`          | Menjalankan container |
+| `docker compose up -d --build`  | Build ulang image dan menjalankan container |
+| `docker compose down`           | Menghentikan dan menghapus container |
+| `docker compose ps`             | Melihat status container |
+| `docker compose logs -f`        | Melihat log seluruh service |
+| `docker compose logs -f app`    | Melihat log service aplikasi |
+| `docker compose exec app bash`  | Masuk ke terminal container aplikasi |
 
 **Penting:** Jangan menggunakan `docker compose down -v` sembarangan karena opsi `-v` juga menghapus named volume, termasuk penyimpanan database PostgreSQL.
 
