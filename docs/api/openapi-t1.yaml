@@ -20,6 +20,8 @@ info:
   x-owner: T1
 
 servers:
+  - url: https://apitim1-staging.ziza.asia/api/v1
+    description: Staging Tim 1 (pengujian kampus)
   - url: https://api-staging.sia.iti.ac.id/api/v1
     description: Staging Integration Environment
   - url: https://api.sia.iti.ac.id/api/v1
