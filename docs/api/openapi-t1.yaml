@@ -1,0 +1,736 @@
+openapi: 3.0.3
+
+info:
+  title: SIA ITI — API Tim 1 (Identity, User & Master Data)
+  version: 1.1.0
+  description: |
+    Turunan kontrak **SIA-API-INT Versi 1.1 — Baseline (Sprint 1 Release, 22 Oktober 2026)**,
+    bagian 2 (standar umum), 3 (autentikasi & keamanan), 4 (envelope pattern), dan 6.1
+    (6 endpoint layanan Tim 1).
+
+    Aturan berkas ini: **seluruh nilai kontrak disalin apa adanya** — path, nama field,
+    tipe error, bentuk amplop, dan contoh respons. Berkas ini tidak boleh mengubah nilai
+    kontrak; penyimpangan hanya boleh lewat Change Request (CR) resmi yang dikelola Tim 7
+    (kontrak bagian 1.1). Bila berkas ini berbeda dari dokumen kontrak, **kontrak yang menang**.
+
+    Pemilik implementasi: Tim 1 (Identity, User & Master Data). Pemilik kontrak: Tim 7.
+  contact:
+    name: Tim 1 — Proyek Teknologi Informasi, Institut Teknologi Indonesia
+  x-kontrak-acuan: SIA-API-INT v1.1 bagian 6.1
+  x-owner: T1
+
+servers:
+  - url: https://apitim1-staging.ziza.asia/api/v1
+    description: Staging Tim 1 (pengujian kampus)
+  - url: https://api-staging.sia.iti.ac.id/api/v1
+    description: Staging Integration Environment
+  - url: https://api.sia.iti.ac.id/api/v1
+    description: Production Environment
+  - url: http://localhost:8000/api/v1
+    description: Local Development Environment
+
+tags:
+  - name: Auth
+    description: FR-001 — autentikasi kredensial dan penerbitan JWT
+  - name: Master Data
+    description: FR-003 — profil mahasiswa, profil dosen, periode akademik aktif
+
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      summary: Terbitkan JWT Access Token
+      description: |
+        Memvalidasi kredensial pengguna (NIM/NIDN, bukan email) dan menerbitkan JWT.
+        Akses/role: Public. Rate limit kontrak bagian 3.3 SEC-INT-003: 100 request/menit per IP.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+            example:
+              username: "1153000001"
+              password: "SecretPassword123!"
+      responses:
+        "200":
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, code, message, data, meta]
+                properties:
+                  success:
+                    type: boolean
+                    enum: [true]
+                  code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Authentication successful
+                  data:
+                    $ref: "#/components/schemas/LoginData"
+                  meta:
+                    type: object
+                    nullable: true
+                    example: null
+              example:
+                success: true
+                code: 200
+                message: Authentication successful
+                data:
+                  tokenType: Bearer
+                  accessToken: eyJhbG...VCJ9...
+                  expiresIn: 43200
+                  user:
+                    userId: usr_9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+                    identifier: "1153000001"
+                    fullName: Budi Santoso
+                    roles: [STUDENT]
+                meta: null
+        "401":
+          $ref: "#/components/responses/AuthenticationFailed"
+        "422":
+          $ref: "#/components/responses/LoginValidationError"
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logout
+      summary: Invalidasi token JWT
+      description: |
+        Memasukkan token ke daftar pembatalan (blacklist) berdasarkan klaim `jti`.
+        Akses/role: Authenticated (semua role). Request body kosong.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successfully logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, code, message, data, meta]
+                properties:
+                  success:
+                    type: boolean
+                    enum: [true]
+                  code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully logged out
+                  data:
+                    type: object
+                    nullable: true
+                    example: null
+                  meta:
+                    type: object
+                    nullable: true
+                    example: null
+              example:
+                success: true
+                code: 200
+                message: Successfully logged out
+                data: null
+                meta: null
+        "401":
+          $ref: "#/components/responses/UnauthorizedToken"
+
+  /auth/change-password:
+    post:
+      tags: [Auth]
+      operationId: changePassword
+      summary: Ganti kata sandi sendiri
+      description: "Mengganti kata sandi pengguna yang sedang login. Akses/role: Authenticated (semua role)."
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+            example:
+              currentPassword: "SecretPassword123!"
+              newPassword: "NewSecurePassword456!"
+              newPasswordConfirmation: "NewSecurePassword456!"
+      responses:
+        "200":
+          description: Password updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, code, message, data, meta]
+                properties:
+                  success:
+                    type: boolean
+                    enum: [true]
+                  code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Password updated successfully
+                  data:
+                    type: object
+                    nullable: true
+                    example: null
+                  meta:
+                    type: object
+                    nullable: true
+                    example: null
+              example:
+                success: true
+                code: 200
+                message: Password updated successfully
+                data: null
+                meta: null
+        "401":
+          $ref: "#/components/responses/UnauthorizedToken"
+        "422":
+          $ref: "#/components/responses/ChangePasswordValidationError"
+
+  /students/{studentId}:
+    get:
+      tags: [Master Data]
+      operationId: getStudent
+      summary: Profil rinci mahasiswa
+      description: |
+        Akses/role: ADMIN_ACADEMIC, LECTURER, ACADEMIC_ADVISOR, STUDENT (hanya data milik sendiri —
+        SEC-INT-002, otorisasi diverifikasi di sisi server).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          description: ID mahasiswa berprefiks domain (std_...)
+          schema:
+            type: string
+          example: std_8a9b0c1d-2e3f-4a5b-6c7d-8e9f0a1b2c3d
+      responses:
+        "200":
+          description: Student profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, code, message, data, meta]
+                properties:
+                  success:
+                    type: boolean
+                    enum: [true]
+                  code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Student profile retrieved successfully
+                  data:
+                    $ref: "#/components/schemas/StudentProfile"
+                  meta:
+                    type: object
+                    nullable: true
+                    example: null
+              example:
+                success: true
+                code: 200
+                message: Student profile retrieved successfully
+                data:
+                  studentId: std_8a9b0c1d-2e3f-4a5b-6c7d-8e9f0a1b2c3d
+                  nim: "1153000001"
+                  fullName: Budi Santoso
+                  studyProgramId: sp_550e8400-e29b-41d4-a716-446655440000
+                  studyProgramName: Teknik Informatika
+                  academicAdvisorId: lec_48392019-1029-3847-5610-293847561029
+                  academicAdvisorName: Dr. Ir. Hendra S., M.T.
+                  academicStatus: ACTIVE
+                  entryYear: 2022
+                meta: null
+        "401":
+          $ref: "#/components/responses/UnauthorizedToken"
+        "403":
+          $ref: "#/components/responses/ForbiddenAccess"
+        "404":
+          $ref: "#/components/responses/StudentNotFound"
+
+  /lecturers/{lecturerId}:
+    get:
+      tags: [Master Data]
+      operationId: getLecturer
+      summary: Profil rinci dosen
+      description: "Akses/role: Authenticated (semua role)."
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: lecturerId
+          in: path
+          required: true
+          description: ID dosen berprefiks domain (lec_...)
+          schema:
+            type: string
+          example: lec_48392019-1029-3847-5610-293847561029
+      responses:
+        "200":
+          description: Lecturer profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, code, message, data, meta]
+                properties:
+                  success:
+                    type: boolean
+                    enum: [true]
+                  code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Lecturer profile retrieved successfully
+                  data:
+                    $ref: "#/components/schemas/LecturerProfile"
+                  meta:
+                    type: object
+                    nullable: true
+                    example: null
+              example:
+                success: true
+                code: 200
+                message: Lecturer profile retrieved successfully
+                data:
+                  lecturerId: lec_48392019-1029-3847-5610-293847561029
+                  nidn: "0415088501"
+                  fullName: Dr. Ir. Hendra S., M.T.
+                  studyProgramId: sp_550e8400-e29b-41d4-a716-446655440000
+                  studyProgramName: Teknik Informatika
+                  status: ACTIVE
+                meta: null
+        "401":
+          $ref: "#/components/responses/UnauthorizedToken"
+        "404":
+          $ref: "#/components/responses/LecturerNotFound"
+
+  /academic-periods/active:
+    get:
+      tags: [Master Data]
+      operationId: getActiveAcademicPeriod
+      summary: Periode akademik yang sedang aktif
+      description: "Akses/role: Authenticated (semua role)."
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Active academic period retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, code, message, data, meta]
+                properties:
+                  success:
+                    type: boolean
+                    enum: [true]
+                  code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Active academic period retrieved
+                  data:
+                    $ref: "#/components/schemas/ActiveAcademicPeriod"
+                  meta:
+                    type: object
+                    nullable: true
+                    example: null
+              example:
+                success: true
+                code: 200
+                message: Active academic period retrieved
+                data:
+                  academicPeriodId: prd_20242
+                  academicYear: 2024/2025
+                  semesterType: EVEN
+                  startDate: "2025-02-01T00:00:00Z"
+                  endDate: "2025-06-30T23:59:59Z"
+                  isKrsPhase: true
+                  krsRegularDeadline: "2025-02-14T23:59:59Z"
+                  krsMbkmDeadline: "2025-02-20T23:59:59Z"
+                meta: null
+        "401":
+          $ref: "#/components/responses/UnauthorizedToken"
+        "404":
+          $ref: "#/components/responses/AcademicPeriodNotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT diterbitkan Tim 1 pada POST /auth/login dan divalidasi API Gateway Tim 7.
+        Klaim wajib (kontrak bagian 3.2): iss = https://identity.sia.iti.ac.id, sub, identifier,
+        roles, permissions, iat, exp, jti.
+
+  schemas:
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          description: NIM atau NIDN pengguna (bukan email)
+          example: "1153000001"
+        password:
+          type: string
+          format: password
+          example: "SecretPassword123!"
+
+    LoginData:
+      type: object
+      required: [tokenType, accessToken, expiresIn, user]
+      properties:
+        tokenType:
+          type: string
+          enum: [Bearer]
+        accessToken:
+          type: string
+          description: JWT bertanda tangan; jangan dicatat di log atau dikirim lewat query string (SEC-INT-001)
+        expiresIn:
+          type: integer
+          description: Masa berlaku token dalam detik. Kontrak menetapkan 43200 (12 jam).
+          enum: [43200]
+        user:
+          type: object
+          required: [userId, identifier, fullName, roles]
+          properties:
+            userId:
+              type: string
+              example: usr_9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+            identifier:
+              type: string
+              example: "1153000001"
+            fullName:
+              type: string
+              example: Budi Santoso
+            roles:
+              type: array
+              items:
+                $ref: "#/components/schemas/RoleName"
+
+    RoleName:
+      type: string
+      description: Nama role persis seperti kontrak bagian 1.3
+      enum:
+        [
+          STUDENT,
+          LECTURER,
+          ACADEMIC_ADVISOR,
+          MBKM_ADVISOR,
+          ADMIN_ACADEMIC,
+          KAPRODI,
+          BAAK,
+        ]
+
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword, newPasswordConfirmation]
+      properties:
+        currentPassword:
+          type: string
+          format: password
+          example: "SecretPassword123!"
+        newPassword:
+          type: string
+          format: password
+          example: "NewSecurePassword456!"
+        newPasswordConfirmation:
+          type: string
+          format: password
+          example: "NewSecurePassword456!"
+
+    StudentProfile:
+      type: object
+      required:
+        - studentId
+        - nim
+        - fullName
+        - studyProgramId
+        - studyProgramName
+        - academicAdvisorId
+        - academicAdvisorName
+        - academicStatus
+        - entryYear
+      properties:
+        studentId:
+          type: string
+          example: std_8a9b0c1d-2e3f-4a5b-6c7d-8e9f0a1b2c3d
+        nim:
+          type: string
+          example: "1153000001"
+        fullName:
+          type: string
+          example: Budi Santoso
+        studyProgramId:
+          type: string
+          example: sp_550e8400-e29b-41d4-a716-446655440000
+        studyProgramName:
+          type: string
+          example: Teknik Informatika
+        academicAdvisorId:
+          type: string
+          example: lec_48392019-1029-3847-5610-293847561029
+        academicAdvisorName:
+          type: string
+          example: Dr. Ir. Hendra S., M.T.
+        academicStatus:
+          type: string
+          description: Status keaktifan versi API; nilai SRS (Aktif/Cuti/Non-Aktif) dipetakan ke enum ini
+          enum: [ACTIVE, CUTI, NON_ACTIVE]
+          example: ACTIVE
+        entryYear:
+          type: integer
+          example: 2022
+
+    LecturerProfile:
+      type: object
+      required:
+        [lecturerId, nidn, fullName, studyProgramId, studyProgramName, status]
+      properties:
+        lecturerId:
+          type: string
+          example: lec_48392019-1029-3847-5610-293847561029
+        nidn:
+          type: string
+          example: "0415088501"
+        fullName:
+          type: string
+          example: Dr. Ir. Hendra S., M.T.
+        studyProgramId:
+          type: string
+          example: sp_550e8400-e29b-41d4-a716-446655440000
+        studyProgramName:
+          type: string
+          example: Teknik Informatika
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+          example: ACTIVE
+
+    ActiveAcademicPeriod:
+      type: object
+      required:
+        - academicPeriodId
+        - academicYear
+        - semesterType
+        - startDate
+        - endDate
+        - isKrsPhase
+        - krsRegularDeadline
+        - krsMbkmDeadline
+      properties:
+        academicPeriodId:
+          type: string
+          description: Kode referensi bisnis periode (kontrak bagian 2.2), bukan UUID
+          example: prd_20242
+        academicYear:
+          type: string
+          example: 2024/2025
+        semesterType:
+          type: string
+          enum: [ODD, EVEN]
+          example: EVEN
+        startDate:
+          type: string
+          format: date-time
+          description: ISO 8601 UTC (kontrak bagian 2.2)
+          example: "2025-02-01T00:00:00Z"
+        endDate:
+          type: string
+          format: date-time
+          example: "2025-06-30T23:59:59Z"
+        isKrsPhase:
+          type: boolean
+          example: true
+        krsRegularDeadline:
+          type: string
+          format: date-time
+          example: "2025-02-14T23:59:59Z"
+        krsMbkmDeadline:
+          type: string
+          format: date-time
+          example: "2025-02-20T23:59:59Z"
+
+    ErrorDetail:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+          example: password
+        message:
+          type: string
+          example: Kombinasi NIM/NIDN dan kata sandi tidak valid.
+
+    ErrorObject:
+      type: object
+      required: [type, details]
+      properties:
+        type:
+          type: string
+          description: Lima tipe error resmi kontrak bagian 4.3
+          enum:
+            - AUTHENTICATION_FAILED
+            - UNAUTHORIZED_TOKEN
+            - FORBIDDEN_ACCESS
+            - RESOURCE_NOT_FOUND
+            - VALIDATION_ERROR
+        details:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorDetail"
+
+    ErrorResponse:
+      type: object
+      description: Amplop error standar; tidak ada meta pada respons error (kontrak bagian 4.3)
+      required: [success, code, message, error]
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        code:
+          type: integer
+          example: 401
+        message:
+          type: string
+        error:
+          $ref: "#/components/schemas/ErrorObject"
+
+  responses:
+    AuthenticationFailed:
+      description: Kredensial tidak valid (kontrak bagian 6.1 POST /auth/login)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            success: false
+            code: 401
+            message: Invalid username or password
+            error:
+              type: AUTHENTICATION_FAILED
+              details:
+                - field: password
+                  message: Kombinasi NIM/NIDN dan kata sandi tidak valid.
+
+    UnauthorizedToken:
+      description: Token hilang, tidak valid, atau sudah dibatalkan (kontrak bagian 4.3)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            success: false
+            code: 401
+            message: Token is missing or already invalidated
+            error:
+              type: UNAUTHORIZED_TOKEN
+              details: []
+
+    ForbiddenAccess:
+      description: Token sah tetapi role tidak berhak atas sumber daya (SEC-INT-002)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            success: false
+            code: 403
+            message: You are not allowed to access this resource
+            error:
+              type: FORBIDDEN_ACCESS
+              details: []
+
+    LoginValidationError:
+      description: Username/password tidak dikirim atau kosong (kontrak bagian 4.3)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            code: 422
+            message: Validation failed for incoming request payload
+            error:
+              type: VALIDATION_ERROR
+              details:
+                - field: password
+                  message: Kata sandi wajib diisi.
+
+    ChangePasswordValidationError:
+      description: Kata sandi saat ini tidak sesuai (kontrak bagian 6.1 POST /auth/change-password)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            code: 422
+            message: Password validation failed
+            error:
+              type: VALIDATION_ERROR
+              details:
+                - field: currentPassword
+                  message: Kata sandi saat ini tidak sesuai.
+
+    StudentNotFound:
+      description: Mahasiswa tidak ditemukan (kontrak bagian 6.1 GET /students/{studentId})
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            success: false
+            code: 404
+            message: Student profile not found
+            error:
+              type: RESOURCE_NOT_FOUND
+              details:
+                - field: studentId
+                  message: Data mahasiswa dengan ID tersebut tidak ditemukan.
+
+    LecturerNotFound:
+      description: Dosen tidak ditemukan (kontrak bagian 6.1 GET /lecturers/{lecturerId})
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            success: false
+            code: 404
+            message: Lecturer profile not found
+            error:
+              type: RESOURCE_NOT_FOUND
+              details: []
+
+    AcademicPeriodNotFound:
+      description: Tidak ada periode akademik aktif (kontrak bagian 6.1 GET /academic-periods/active)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            success: false
+            code: 404
+            message: No active academic period configured
+            error:
+              type: RESOURCE_NOT_FOUND
+              details: []
