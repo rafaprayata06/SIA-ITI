@@ -31,6 +31,8 @@ class DemoIdentitySeeder extends Seeder
         $users = [
             ['9000000001', 'Admin Demo', ['ADMIN_ACADEMIC']],
             ['9000000002', 'BAAK Demo', ['BAAK']],
+            ['9000000003', 'Kaprodi Demo', ['KAPRODI']],
+            ['9000000004', 'Pembimbing MBKM Demo', ['MBKM_ADVISOR']],
             ['0415088501', 'Dosen Demo Satu, S.Kom., M.T.', ['LECTURER', 'ACADEMIC_ADVISOR']],
             ['1153000001', 'Mahasiswa Demo Satu', ['STUDENT']],
             ['1153000002', 'Mahasiswa Demo Dua', ['STUDENT']],
